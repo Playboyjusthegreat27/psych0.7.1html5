@@ -1,0 +1,49 @@
+name: Build HTML5
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, experimental]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+
+permissions:
+  contents: read
+
+jobs:
+  build-html5:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Haxe
+        uses: krdlab/setup-haxe@master
+        with:
+          haxe-version: 4.2.5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Haxelib dependencies
+        shell: bash
+        run: |
+          haxelib setup ~/haxelib
+          haxelib install hmm --quiet
+          haxelib run hmm install
+
+      - name: Build HTML5 release
+        run: haxelib run lime build html5 -release
+
+      - name: Upload playable HTML5 build
+        uses: actions/upload-artifact@v4
+        with:
+          name: psych-engine-0.7.1-html5
+          path: export/release/html5/bin/
+          if-no-files-found: error
+          retention-days: 14
